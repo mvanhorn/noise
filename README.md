@@ -58,6 +58,15 @@ uv run torchrun --standalone --nproc_per_node=8 train/val/eggroll.py
 Each run writes `config.json`, `metrics.jsonl`, `final.pt` and `result.json` (validation loss and training time)
 to `logs/`. `uv run utils/eval.py logs/val/final.pt` rescores a checkpoint.
 
+Compare two or more run directories (the first is the baseline): config diff,
+aligned train loss and wall time at the last common step, and a ranking by
+validation loss. Does not load weights.
+
+```bash
+uv run utils/compare_runs.py logs/val logs/speedrun
+uv run utils/compare_runs.py logs/a logs/b --at-step 100 --format markdown
+```
+
 ## Records
 
 ### Track 1: validation loss
