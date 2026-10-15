@@ -116,7 +116,7 @@ def test_row_loss_prefers_train_then_population():
 def test_recipe_draws_matches_16k_cell():
     draws = recipe_draws(sample_config()['recipe'])
     assert draws == 8 * 256 + 8 * 512 + 8 * 512 + 2048 + 384 + 384 + 128 + 1664 + 4608
-    assert draws == 16384
+    assert draws == 19456
     assert recipe_draws(None) is None
     assert recipe_draws({}) is None
     assert recipe_draws({'embedding': 64}) == 64
@@ -283,7 +283,7 @@ def test_summarize_complete_run(tmp_path):
     assert summary['min_loss_step'] == 4
     assert summary['val_loss'] == pytest.approx(3.99)
     assert summary['tokens'] == 4 * 8 * 2048
-    assert summary['recipe_draws'] == 16384
+    assert summary['recipe_draws'] == 19456
     assert summary['tokens_per_second'] == pytest.approx(summary['tokens'] / summary['train_seconds'])
     assert summary['sparkline']
     assert summary['eta_seconds'] is None
@@ -366,7 +366,7 @@ def test_inspect_path_roundtrip(tmp_path):
     report, issues = inspect_path(tmp_path / 'val/log', fmt='text')
     assert issues == []
     assert 'val/log' in report
-    assert '16384' in report
+    assert '19,456' in report
 
 
 def test_cli_success(tmp_path, capsys):
@@ -411,3 +411,22 @@ def test_cli_help():
     with pytest.raises(SystemExit) as exc:
         main(['--help'])
     assert exc.value.code == 0
+
+
+def test_checked_in_val_log():
+    report, issues = inspect_path(ROOT / 'train/val/log', fmt='json')
+    assert [i.level for i in issues if i.level == 'error'] == []
+    payload = json.loads(report)
+    assert payload['status'] == 'complete'
+    assert payload['logged_steps'] == 610
+    assert payload['val_loss'] == pytest.approx(3.991304921753266)
+    assert payload['tokens'] == 9_994_240
+    assert payload['recipe_draws'] == 19456
+
+
+def test_checked_in_speedrun_log():
+    report, issues = inspect_path(ROOT / 'train/speedrun/log', fmt='text')
+    assert issues == []
+    assert 'reached target' in report
+    assert '4.1800' in report
+    assert '5,440' in report
